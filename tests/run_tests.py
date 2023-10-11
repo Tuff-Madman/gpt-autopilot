@@ -27,7 +27,7 @@ for test in os.scandir(BASE_PATH):
 
         prompt_file = os.path.join(test, "prompt.txt")
         command = os.path.join(BASE_PATH, "..", "gpt-autopilot.py")
-        command += " --prompt-file " + prompt_file
+        command += f" --prompt-file {prompt_file}"
         command += " --create-dir"
         command += " --dir " + os.path.join(BASE_PATH, "results", test_name)
         command += " --delete"
@@ -46,9 +46,9 @@ for test in os.scandir(BASE_PATH):
         flag_file = os.path.join(test, "flags.txt")
         if os.path.exists(flag_file):
             with open(flag_file) as f:
-                command += " " + f.read().strip()
+                command += f" {f.read().strip()}"
 
-        print("---- RUNNING TEST: " + test_name + " ----\n")
+        print(f"---- RUNNING TEST: {test_name}" + " ----\n")
 
         subprocess.run(command, shell=True)
 

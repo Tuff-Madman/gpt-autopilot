@@ -17,7 +17,7 @@ def codedir(filename=""):
     return os.path.join(code_base_path, filename)
 
 def relpath(filepath, base=None):
-    if base == None:
+    if base is None:
         base = codedir()
     path = os.path.relpath(filepath, base)
     if os.path.isdir(filepath):
@@ -68,15 +68,11 @@ def safepath(path):
     return file
 
 def extract_number(filename):
-    match = re.search(r'\d+', filename)
-    if match:
-        return int(match.group())
-    else:
-        return 0
+    return int(match.group()) if (match := re.search(r'\d+', filename)) else 0
 
 def numberfile(parent_folder, folder=False):
     # Get a list of all files/folders in the parent folder
-    items = [item for item in os.listdir(parent_folder)]
+    items = list(os.listdir(parent_folder))
 
     # Find the highest numbered file/folder
     highest_number = 0
@@ -92,6 +88,4 @@ def numberfile(parent_folder, folder=False):
 
     # Increment the highest number
     new_item_number = highest_number + 1
-    new_item_name = str(new_item_number).zfill(4)
-
-    return new_item_name
+    return str(new_item_number).zfill(4)

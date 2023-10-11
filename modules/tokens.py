@@ -36,10 +36,7 @@ def get_token_price(model, direction):
         token_price_input = 0.0
         token_price_output = 0.0
 
-    if direction == "input":
-        return token_price_input
-    else:
-        return token_price_output
+    return token_price_input if direction == "input" else token_price_output
 
 def get_token_limit(model):
     if model.startswith("gpt-4-32k"):

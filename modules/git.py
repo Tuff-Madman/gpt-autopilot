@@ -30,7 +30,7 @@ def get_commit_message(messages, model, temp):
     global git_log
     global commit_count
 
-    commit_message = "commit " + str(commit_count)
+    commit_message = f"commit {str(commit_count)}"
 
     if "no-commit-msg" in cmd_args.args:
         return commit_message
@@ -135,11 +135,20 @@ def commit(messages, model, temp):
         f.write(str(time.time()))
 
     try:
-        output = subprocess.check_output(join_cmd([
-            "cd " + codedir(),
-            "git add .",
-            "git commit -m \"" + safecmd(commit_message) + "\"",
-        ]), shell=True).decode().strip()
+        output = (
+            subprocess.check_output(
+                join_cmd(
+                    [
+                        f"cd {codedir()}",
+                        "git add .",
+                        "git commit -m \"" + safecmd(commit_message) + "\"",
+                    ]
+                ),
+                shell=True,
+            )
+            .decode()
+            .strip()
+        )
         print(output)
     except subprocess.CalledProcessError:
         print("GIT:      Nothing to commit.")
@@ -159,10 +168,10 @@ def revert(messages):
     global commit_count
 
     if commit_count > 2:
-        subprocess.run(join_cmd([
-            "cd " + codedir(),
-            "git reset HEAD~1 --hard",
-        ]), shell=True)
+        subprocess.run(
+            join_cmd([f"cd {codedir()}", "git reset HEAD~1 --hard"]),
+            shell=True,
+        )
     else:
         reset_code_folder()
         init()
@@ -184,16 +193,18 @@ def revert(messages):
     return (last_prompt, messages)
 
 def own_commit():
-    diff = subprocess.check_output(join_cmd([
-        "cd " + codedir(),
-        "git add .",
-        "git diff --staged",
-    ]), shell=True).decode().strip()
+    diff = (
+        subprocess.check_output(
+            join_cmd([f"cd {codedir()}", "git add .", "git diff --staged"]),
+            shell=True,
+        )
+        .decode()
+        .strip()
+    )
 
-    subprocess.run(join_cmd([
-        "cd " + codedir(),
-        "git restore --staged .",
-    ]), shell=True)
+    subprocess.run(
+        join_cmd([f"cd {codedir()}", "git restore --staged ."]), shell=True
+    )
 
     if diff == "":
         return False
@@ -203,8 +214,7 @@ def own_commit():
 def print_help():
     global commit_count
     if "git" in cmd_args.args and commit_count > 1:
-        helptext  = "GIT COMMANDS AVAILABLE:\n"
-        helptext += "- revert   revert previous commit\n"
+        helptext = "GIT COMMANDS AVAILABLE:\n" + "- revert   revert previous commit\n"
         helptext += "- retry    revert commit and try same prompt again\n"
         helptext += "- commit   commit your own changes and tell ChatGPT\n"
 

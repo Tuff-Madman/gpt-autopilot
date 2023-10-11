@@ -82,11 +82,7 @@ List of instruction slugs and their descriptions:\n
 
     slug = json.loads(response["choices"][0]["message"]["function_call"]["arguments"]) # type: ignore
     certainty = slug["certainty"]
-    slug = slug["slug"]
-
-    if certainty < 90:
-        slug = "default"
-
+    slug = "default" if certainty < 90 else slug["slug"]
     if slug == "ambiguous":
         slug = "default"
 

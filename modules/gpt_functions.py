@@ -59,9 +59,9 @@ def make_tasklist(tasks):
     prev_file = None
     task_string = ""
     for item in tasks:
-        if prev_file != None and prev_file != item["file_involved"]:
+        if prev_file not in [None, item["file_involved"]]:
             if "NO_FILE" not in prev_file:
-                task_string = "In " + prev_file + ": " + task_string
+                task_string = f"In {prev_file}: {task_string}"
             combined_tasklist.append(task_string)
             task_string = ""
         prev_file = item["file_involved"]
@@ -70,7 +70,7 @@ def make_tasklist(tasks):
     # add remaining task
     if task_string != "":
         if prev_file != None and "NO_FILE" not in prev_file:
-            task_string = "In " + prev_file + ": " + task_string
+            task_string = f"In {prev_file}: {task_string}"
         combined_tasklist.append(task_string)
 
     tasklist = copy.deepcopy(combined_tasklist)
@@ -78,10 +78,10 @@ def make_tasklist(tasks):
     next_task = combined_tasklist.pop(0)
     all_tasks = ""
 
-    all_tasks += "TASKLIST: 1. " + next_task + "\n"
+    all_tasks += f"TASKLIST: 1. {next_task}" + "\n"
 
     for number, item in enumerate(combined_tasklist):
-        all_tasks += "          " + str( number + 2 ) + ". " + item + "\n"
+        all_tasks += f"          {str(number + 2)}. {item}" + "\n"
 
     print(all_tasks, end="")
 
@@ -92,7 +92,7 @@ def make_tasklist(tasks):
         if modifications == "skip":
             return "SKIP_TASKLIST"
 
-        return "Task list modification request: " + modifications
+        return f"Task list modification request: {modifications}"
 
     print()
 
@@ -130,7 +130,7 @@ def make_tasklist(tasks):
     tasklist_finished = False
     task_operation_performed = False
 
-    print("TASK:     " + next_task)
+    print(f"TASK:     {next_task}")
     return "TASK_LIST_RECEIVED: Start with first task: \n\n```\n" + next_task + "```\n\nDo all the steps involved in the task and only then run the task_finished function."
 
 def write_file(filename, content):
@@ -217,11 +217,7 @@ def read_file(filename):
 
 def create_dir(directory):
     if isinstance(directory, list):
-        output = ""
-        for dir in directory:
-            output += create_dir(dir)+"\n"
-        return output
-
+        return "".join(create_dir(dir)+"\n" for dir in directory)
     fullpath = safepath(directory)
     relative = relpath(fullpath)
 
@@ -311,10 +307,13 @@ def should_ignore(path, ignore):
         if (path.startswith(aig + os.sep) or (os.sep + aig + os.sep) in path) and path != aig + os.sep and path != aig:
             return True
 
-    for ignore_file in ignore:
-        if path.startswith(ignore_file + os.sep) or path.endswith(os.sep + ignore_file) or (os.sep + ignore_file + os.sep) in path or path == ignore_file:
-            return True
-    return False
+    return any(
+        path.startswith(ignore_file + os.sep)
+        or path.endswith(os.sep + ignore_file)
+        or (os.sep + ignore_file + os.sep) in path
+        or path == ignore_file
+        for ignore_file in ignore
+    )
 
 def list_files(list = "", print_output = True, ignore = [
     ".gpt-autopilot",
@@ -362,7 +361,7 @@ def list_files(list = "", print_output = True, ignore = [
         file_list += path + "\n"
 
     if print_output:
-        print(f"FUNCTION: Listing files in project directory")
+        print("FUNCTION: Listing files in project directory")
 
     if file_list == "":
         return "The project directory is currently empty."
@@ -423,11 +422,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
     base_dir = safepath(base_dir)
     base_dir = base_dir.rstrip("/").rstrip("\\")
 
-    if asynch == True:
-        asynchly = " asynchronously"
-    else:
-        asynchly = ""
-
+    asynchly = " asynchronously" if asynch == True else ""
     print()
     print("#########################################################")
     print(f"GPT: I want to run the following command{asynchly}:")
@@ -437,12 +432,12 @@ def run_cmd(base_dir, command, reason, asynch=False):
     print("------------------------------")
     print(reason)
     print("------------------------------")
-    print("Base: " + base_dir)
+    print(f"Base: {base_dir}")
     print("#########################################################")
     print()
 
     # add cd command
-    full_command = "cd " + base_dir + "; " + command
+    full_command = f"cd {base_dir}; {command}"
 
     if asynch == True:
         print("#################################################")
@@ -482,50 +477,49 @@ def run_cmd(base_dir, command, reason, asynch=False):
         print()
         return answer
 
-    if answer == "YES":
-        process = subprocess.Popen(
-            full_command + " > gpt-autopilot-cmd-output.txt 2>&1",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-
-        # Run command asynchronously in the background
-        if asynch:
-            # Wait for 4 seconds
-            time.sleep(4)
-        else:
-            try:
-                # Wait for the subprocess to finish
-                process.wait()
-            except KeyboardInterrupt:
-                # Send Ctrl+C signal to the subprocess
-                process.send_signal(signal.SIGINT)
-
-        # read possible output
-        output = ""
-        output_file = os.path.join(base_dir, "gpt-autopilot-cmd-output.txt")
-        if os.path.exists(output_file):
-            with open(output_file) as f:
-                output = f.read()
-            os.remove(output_file)
-
-        return_value = "Result from command (first 400 chars):\n" + output[:400]
-
-        if len(output) > 400:
-            return_value += "\nResult from command (last 245 chars):\n" + output[-245:]
-
-        if output.strip() == "":
-            return_value += "<no output from command>"
-
-        return_value = return_value.strip()
-
-        print(return_value)
-        print()
-
-        return return_value
-    else:
+    if answer != "YES":
         return "I don't want to run that command"
+    process = subprocess.Popen(
+        f"{full_command} > gpt-autopilot-cmd-output.txt 2>&1",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    # Run command asynchronously in the background
+    if asynch:
+        # Wait for 4 seconds
+        time.sleep(4)
+    else:
+        try:
+            # Wait for the subprocess to finish
+            process.wait()
+        except KeyboardInterrupt:
+            # Send Ctrl+C signal to the subprocess
+            process.send_signal(signal.SIGINT)
+
+    # read possible output
+    output = ""
+    output_file = os.path.join(base_dir, "gpt-autopilot-cmd-output.txt")
+    if os.path.exists(output_file):
+        with open(output_file) as f:
+            output = f.read()
+        os.remove(output_file)
+
+    return_value = "Result from command (first 400 chars):\n" + output[:400]
+
+    if len(output) > 400:
+        return_value += "\nResult from command (last 245 chars):\n" + output[-245:]
+
+    if output.strip() == "":
+        return_value += "<no output from command>"
+
+    return_value = return_value.strip()
+
+    print(return_value)
+    print()
+
+    return return_value
 
 def project_finished(finished=True):
     global tasklist_finished
@@ -547,8 +541,8 @@ def task_finished(finished=True):
     if len(active_tasklist) > 0:
         next_task = active_tasklist.pop(0)
         task_operation_performed = False
-        print("TASK:     " + next_task)
-        return "Thank you. Please do the next task, unless it has already been done: " + next_task
+        print(f"TASK:     {next_task}")
+        return f"Thank you. Please do the next task, unless it has already been done: {next_task}"
 
     tasklist_finished = True
     return "PROJECT_FINISHED"
@@ -702,9 +696,7 @@ real_append_file_func = file_open_for_appending_func
 definitions = [
     make_tasklist_func,
     real_write_file_func,
-    #real_append_file_func,
     ask_clarification_func,
-    #replace_text_func,
     {
         "name": "list_files",
         "description": "List the files in the current project",
@@ -759,9 +751,7 @@ definitions = [
             "properties": {
                 "directory": {
                     "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
+                    "items": {"type": "string"},
                     "description": "Name of the directory to create or an array of directories to create",
                 },
             },
@@ -830,7 +820,7 @@ definitions = [
     },
     {
         "name": "run_cmd",
-        "description": "Run a "+what_command+" command. Returns the output. Folder navigation commands are disallowed. Do it with base_dir",
+        "description": f"Run a {what_command} command. Returns the output. Folder navigation commands are disallowed. Do it with base_dir",
         "parameters": {
             "type": "object",
             "properties": {
@@ -886,8 +876,4 @@ def get_definitions(model):
 def function_available(function, model):
     definitions = get_definitions(model)
 
-    for definition in definitions:
-        if definition["name"] == function:
-            return True
-
-    return False
+    return any(definition["name"] == function for definition in definitions)

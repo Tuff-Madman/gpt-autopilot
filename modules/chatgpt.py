@@ -36,13 +36,7 @@ def redact_messages(messages):
     return messages_redact
 
 def filter_messages(messages):
-    filtered = []
-
-    for message in messages:
-        if message["role"] not in ["git"]:
-            filtered.append(message)
-
-    return filtered
+    return [message for message in messages if message["role"] not in ["git"]]
 
 def save_message_history(conv_id, messages):
     if conv_id is not None:
@@ -180,40 +174,9 @@ For a trivial project, make just one task"""
         total_tokens = int(tokens.token_usage["total"])
         token_cost = round(tokens.get_token_cost(model), 2)
         print(f"OK! (+{request_tokens} tokens, total {total_tokens} / {token_cost} USD)")
-    except openai.error.AuthenticationError: # type: ignore
+    except (openai.error.AuthenticationError, openai.InvalidRequestError, openai.error.PermissionError, TypeError): # type: ignore
         print("\nAuthenticationError: Check your API-key")
         sys.exit(1)
-    except openai.InvalidRequestError as e: # type: ignore
-        if "maximum context length" in str(e):
-            print("\nNOTICE:   Context limit reached, redacting old messages...")
-
-            # remove last message
-            messages.pop()
-
-            # redact first unredacted assistant message
-            redacted_messages = redact_messages(messages)
-
-            # show error if no message could be redacted
-            if redacted_messages == messages:
-                raise
-
-            messages = redacted_messages
-        else:
-            raise
-
-        return send_message(
-            message=message,
-            messages=messages,
-            model=model,
-            function_call=function_call, # type: ignore
-            conv_id=conv_id,
-            print_message=print_message,
-            temp=temp,
-        )
-    except openai.error.PermissionError: # type: ignore
-        raise
-    except TypeError:
-        raise
     except NameError:
         raise
     except Exception as e:

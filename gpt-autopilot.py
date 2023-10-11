@@ -61,7 +61,7 @@ def unwrap_comments(content, tags):
 
 def strip_markdown(content):
     content = content.strip()
-    if content[0:3] == "```":
+    if content[:3] == "```":
         content = re.sub(r"^\s*```[^\n]+\n", "", content)
         content = re.sub(r"\n```\s*$", "", content)
     return content
@@ -156,21 +156,21 @@ def print_task_finished(model):
     totaltokens = str(tokens_total).rjust(13, " ")
 
     price_total = round(tokens.get_token_cost(model), 2)
-    total_price = (str(price_total)+" USD").rjust(13, " ")
+    total_price = f"{str(price_total)} USD".rjust(13, " ")
 
     task_tokens = tokens_total - tokens.prev_tokens_total
     task_tokens = str(task_tokens).rjust(13, " ")
     task__price = round(price_total - tokens.prev_price_total, 2)
-    task__price = (str(task__price)+" USD").rjust(13, " ")
+    task__price = f"{str(task__price)} USD".rjust(13, " ")
 
     print()
-    print(f"###############################")
-    print(f"# Task is finished!           #")
+    print("###############################")
+    print("# Task is finished!           #")
     print(f"# Task tokens:  {task_tokens} #")
     print(f"# Task price:   {task__price} #")
     print(f"# Total tokens: {totaltokens} #")
     print(f"# Total price:  {total_price} #")
-    print(f"###############################")
+    print("###############################")
     print()
 
     tokens.prev_tokens_total = tokens_total
@@ -204,7 +204,7 @@ def function_list(model, exclude=[]):
         if func["name"] in exclude:
             continue
         func_list += func["name"] + "("
-        func_list += ", ".join([key for key in func["parameters"]["properties"].keys()])
+        func_list += ", ".join(list(func["parameters"]["properties"].keys()))
         func_list += ")\n"
     return func_list.strip()
 
@@ -268,7 +268,7 @@ def create_zip():
         unique_filename = zip_filename.removesuffix(".zip") + "-" + str(num) + ".zip"
         zip_filepath = paths.relative(zip_folder, unique_filename)
         if num > 1000:
-            print("ERROR: Too many projects in " + zip_folder + " folder")
+            print(f"ERROR: Too many projects in {zip_folder} folder")
             return
 
     filesystem.create_zip(zip_filepath)

@@ -17,16 +17,15 @@ def create_zip(zip_filename):
             if isinstance(content, str):  # File
                 zip_file.writestr(path, content)
             else:  # Folder
-                zip_file.writestr(path + '/', '')
+                zip_file.writestr(f'{path}/', '')
 
 def read(filename):
     global virtual
 
     if "zip" in cmd_args.args:
         return virtual[filename]
-    else:
-        with open(filename, "r") as f:
-            return f.read()
+    with open(filename, "r") as f:
+        return f.read()
 
 def write(filename, content, mode="w"):
     global virtual
@@ -56,10 +55,7 @@ def isdir(directory):
 def exists(file):
     global virtual
 
-    if "zip" in cmd_args.args:
-        return file in virtual
-    else:
-        return os.path.exists(file)
+    return file in virtual if "zip" in cmd_args.args else os.path.exists(file)
 
 def move(source, destination):
     global virtual
@@ -106,19 +102,18 @@ def remove(filename):
             rmtree(filename)
         else:
             del virtual[filename]
+    elif isdir(filename):
+        shutil.rmtree(filename)
     else:
-        if isdir(filename):
-            shutil.rmtree(filename)
-        else:
-            os.remove(filename)
+        os.remove(filename)
 
 def print_contents():
     global virtual
 
     print("FILES IN VIRTUAL FILESYSTEM:")
     for file in virtual.keys():
-        if virtual[file] == None:
-            print("DIR: " + file)
+        if virtual[file] is None:
+            print(f"DIR: {file}")
         else:
-            print("FILE: " + file)
+            print(f"FILE: {file}")
             print(virtual[file])
